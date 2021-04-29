@@ -2957,7 +2957,7 @@ var parcelRequire = function (e, r, t, n) {
       }], [{
         key: "isSupport",
         value: function value() {
-          return !!(!/UCBrowser|Quark/.test(window.navigator.userAgent) && window.fetch && window.ReadableStream && window.Promise && window.URL && window.URL.createObjectURL && window.Blob && window.Worker && new Audio().canPlayType("audio/mp2;").replace(/^no$/, "") && (window.AudioContext || window.webkitAudioContext) && r.default.isSupport());
+          return !!(!/UCBrowser|Quark/.test(window.navigator.userAgent) && window.fetch && window.ReadableStream && window.Promise && window.URL && window.URL.createObjectURL && window.Blob && window.Worker && (new Audio().canPlayType("audio/mp2;").replace(/^no$/, "") || true) && (window.AudioContext || window.webkitAudioContext) && r.default.isSupport());
         }
       }, {
         key: "ready",
