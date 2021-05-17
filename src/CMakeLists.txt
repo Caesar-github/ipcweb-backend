@@ -19,6 +19,8 @@ add_library(restapi
     roi_api.cpp
     event_api.cpp
     peripherals_api.cpp
+    socket_client/socket.cpp
+    socket_client/client.cpp
 )
 
 target_compile_features(restapi PRIVATE cxx_std_14)

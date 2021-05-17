@@ -1,0 +1,1 @@
+int rkipc_video_set(const char *json);
