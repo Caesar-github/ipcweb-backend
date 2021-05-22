@@ -6,8 +6,181 @@
 #include <dbserver.h>
 #include <mediaserver.h>
 
+#include "socket_client/client.h"
+
 namespace rockchip {
 namespace cgi {
+#define USE_RKIPC // just for test
+#ifdef USE_RKIPC
+
+nlohmann::json image_specific_resource_get(std::string string) {
+  nlohmann::json specific_resource =
+      nlohmann::json::object(); /* one of all the same resources */
+  minilog_debug("%s: string is %s\n", __func__, string.c_str());
+  if (!string.compare(PATH_IMAGE_ADJUSTMENT)) {
+    int brightness, contrast, saturation, sharpness;
+    rk_isp_get_brightness(0, &brightness);
+    rk_isp_get_contrast(0, &contrast);
+    rk_isp_get_saturation(0, &saturation);
+    rk_isp_get_sharpness(0, &sharpness);
+    specific_resource.emplace("iBrightness", (int)(brightness / 2.55));
+    specific_resource.emplace("iContrast", (int)(contrast / 2.55));
+    specific_resource.emplace("iSaturation", (int)(saturation / 2.55));
+    specific_resource.emplace("iSharpness", sharpness);
+  } else if (!string.compare(PATH_IMAGE_EXPOSURE)) {
+
+  } else if (!string.compare(PATH_IMAGE_NIGHT_TO_DAY)) {
+
+  } else if (!string.compare(PATH_IMAGE_BLC)) {
+
+  } else if (!string.compare(PATH_IMAGE_WHITE_BLANCE)) {
+
+  } else if (!string.compare(PATH_IMAGE_ENHANCEMENT)) {
+
+  } else if (!string.compare(PATH_IMAGE_VIDEO_ADJUSTMEN)) {
+
+  }
+
+  return specific_resource;
+}
+
+void image_specific_resource_set(std::string string, nlohmann::json data) {
+  char *table;
+  int value;
+
+  minilog_debug("%s: string is %s\n", __func__, string.c_str());
+  minilog_debug("data is %s\n", data.dump().c_str());
+  if (!string.compare(PATH_IMAGE_ADJUSTMENT)) {
+    if (data.dump().find("iBrightness") != data.dump().npos) {
+      value = atoi(data.at("iBrightness").dump().c_str());
+      value *= 2.55;
+      minilog_debug("t1 value is %d\n", value);
+      rk_isp_set_brightness(0, value);
+      minilog_debug("t2 value is %d\n", value);
+    }
+    if (data.dump().find("iContrast") != data.dump().npos) {
+      value = atoi(data.at("iContrast").dump().c_str());
+      rk_isp_set_contrast(0, (int)(value * 2.55));
+    }
+    if (data.dump().find("iSaturation") != data.dump().npos) {
+      value = atoi(data.at("iSaturation").dump().c_str());
+      rk_isp_set_saturation(0, (int)(value * 2.55));
+    }
+    if (data.dump().find("iSharpness") != data.dump().npos) {
+      value = atoi(data.at("iSharpness").dump().c_str());
+      rk_isp_set_sharpness(0, value);
+    }
+  } else if (!string.compare(PATH_IMAGE_EXPOSURE)) {
+
+  } else if (!string.compare(PATH_IMAGE_NIGHT_TO_DAY)) {
+
+  } else if (!string.compare(PATH_IMAGE_BLC)) {
+
+  } else if (!string.compare(PATH_IMAGE_WHITE_BLANCE)) {
+
+  } else if (!string.compare(PATH_IMAGE_ENHANCEMENT)) {
+
+  } else if (!string.compare(PATH_IMAGE_VIDEO_ADJUSTMEN)) {
+
+  }
+
+}
+
+void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  nlohmann::json content;
+  std::string path_api_resource = "";
+  std::string path_channel_resource = "";
+  std::string path_specific_resource = "";
+#ifdef ENABLE_JWT
+  int user_level = Req.UserLevel;
+#endif
+
+  /* Get Path Information */
+  int pos_first = Req.PathInfo.find_first_of("/");
+  path_api_resource = Req.PathInfo.substr(pos_first + 1, Req.PathInfo.size());
+  pos_first = path_api_resource.find_first_of("/");
+  if (pos_first != -1) {
+    path_channel_resource =
+        path_api_resource.substr(pos_first + 1, path_api_resource.size());
+    pos_first = path_channel_resource.find_first_of("/");
+    if (pos_first != -1)
+      path_specific_resource = path_channel_resource.substr(
+          pos_first + 1, path_channel_resource.size());
+  }
+
+  if (Req.Method == "GET") {
+    /* Get based on path information */
+    if (path_channel_resource.empty()) { /* path info is /image */
+      content = nlohmann::json::array();
+      // content.push_back(image_channel_resource_get(1, id));
+    } else {
+      if (path_specific_resource.empty()) { /* path info is /image/0 */
+        //content = image_channel_resource_get(channel_id, id);
+      } else { /* path example is /image/0/blc */
+        content = image_specific_resource_get(path_specific_resource);
+      }
+    }
+
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+    nlohmann::json diff;
+    nlohmann::json cfg_old;
+    nlohmann::json image_config = Req.PostObject; /* must be json::object */
+
+    if (path_specific_resource.empty()) { /* path info is /image/0 or /image/1 */
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+
+    //  cfg_old = image_channel_resource_get(channel_id, id);
+    //   /* Erase unexist data */
+    //   for (auto &x : nlohmann::json::iterator_wrapper(image_config)) {
+    //     if (cfg_old.dump().find(x.key()) == cfg_old.dump().npos)
+    //         image_config.erase(x.key());
+    //   }
+    //   /* Erase unchanged data */
+    //   diff = nlohmann::json::diff(cfg_old, image_config);
+    //   for (auto &x : nlohmann::json::iterator_wrapper(cfg_old)) {
+    //     if (diff.dump().find(x.key()) == diff.dump().npos)
+    //       image_config.erase(x.key());
+    //   }
+    //   /* Set */
+    //   if (!image_config.empty())
+    //     image_channel_resource_set(image_config, id);
+    //   /* Get new info */
+    //   content = image_channel_resource_get(channel_id, id);
+    } else { /* path example is /image/0/blc */
+      cfg_old = image_specific_resource_get(path_specific_resource);
+      /* Erase unexist data */
+      for (auto &x : nlohmann::json::iterator_wrapper(image_config)) {
+        if (cfg_old.dump().find(x.key()) == cfg_old.dump().npos)
+            image_config.erase(x.key());
+      }
+      /* Erase unchanged data */
+      diff = nlohmann::json::diff(cfg_old, image_config);
+      for (auto &x : nlohmann::json::iterator_wrapper(cfg_old)) {
+        if (diff.dump().find(x.key()) == diff.dump().npos)
+          image_config.erase(x.key());
+      }
+      /* Set */
+      if (!image_config.empty())
+        image_specific_resource_set(path_specific_resource, image_config);
+      /* Get new info */
+      content = image_specific_resource_get(path_specific_resource);
+    }
+
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else // USE_RKIPC
 
 nlohmann::json image_specific_config_get(std::string string) {
   nlohmann::json specific_config = nlohmann::json::array();
@@ -218,7 +391,6 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     nlohmann::json diff;
     nlohmann::json cfg_old;
     nlohmann::json image_config = Req.PostObject; /* must be json::object */
-
     if (path_specific_resource
             .empty()) { /* path info is /image/0 or /image/1 */
 #ifdef ENABLE_JWT
@@ -227,6 +399,7 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         return;
       }
 #endif
+
       cfg_old = image_channel_resource_get(channel_id, id);
       /* Erase unexist data */
       for (auto &x : nlohmann::json::iterator_wrapper(image_config)) {
@@ -272,6 +445,7 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+#endif
 
 } // namespace cgi
 } // namespace rockchips
