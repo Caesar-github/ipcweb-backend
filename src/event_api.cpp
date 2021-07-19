@@ -4,16 +4,340 @@
 
 #include "event_api.h"
 #include "common.h"
-#include <dbserver.h>
-#include <fstream>
-#include <mediaserver.h>
-#include <netserver.h>
-#include <storage_manager.h>
 #include <time.h>
 #include <unistd.h>
 
 namespace rockchip {
 namespace cgi {
+
+int GetScheduleId(std::string schedule_name) {
+  if (!schedule_name.compare("motion")) {
+    return 0;
+  } else if (!schedule_name.compare("intrusion")) {
+    return 1;
+  } else if (!schedule_name.compare("video-plan")) {
+    return 2;
+  } else if (!schedule_name.compare("screenshot")) {
+    return 3;
+  } else {
+    return -1;
+  }
+}
+
+#ifdef USE_RKIPC
+
+nlohmann::json regional_invasion_get() {
+  int value;
+  char *str;
+  nlohmann::json ret;
+  nlohmann::json regional_invasion;
+  nlohmann::json normalized_screen_size;
+
+  rk_osd_get_normalized_screen_width(&value);
+  normalized_screen_size.emplace("iNormalizedScreenWidth", value);
+  rk_osd_get_normalized_screen_height(&value);
+  normalized_screen_size.emplace("iNormalizedScreenHeight", value);
+
+  rk_event_ri_get_enabled(&value);
+  regional_invasion.emplace("iEnabled", value);
+  rk_event_ri_get_position_x(&value);
+  regional_invasion.emplace("iPositionX", value);
+  rk_event_ri_get_position_y(&value);
+  regional_invasion.emplace("iPositionY", value);
+  rk_event_ri_get_width(&value);
+  regional_invasion.emplace("iWidth", value);
+  rk_event_ri_get_height(&value);
+  regional_invasion.emplace("iHeight", value);
+  rk_event_ri_get_proportion(&value);
+  regional_invasion.emplace("iProportion", value);
+  rk_event_ri_get_sensitivity_level(&value);
+  regional_invasion.emplace("iSensitivityLevel", value);
+  rk_event_ri_get_time_threshold(&value);
+  regional_invasion.emplace("iTimeThreshold", value);
+
+  ret.emplace("normalizedScreenSize", normalized_screen_size);
+  ret.emplace("regionalInvasion", regional_invasion);
+
+  return ret;
+}
+
+void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  std::string path_api_resource;
+  std::string path_specific_resource;
+  std::string path_channel_resource;
+  char *str;
+  nlohmann::json content;
+#ifdef ENABLE_JWT
+  int user_level = Req.UserLevel;
+#endif
+
+  // Get Path Information
+  int pos_first = Req.PathInfo.find_first_of("/");
+  path_api_resource = Req.PathInfo.substr(pos_first + 1, Req.PathInfo.size());
+  pos_first = path_api_resource.find_first_of("/");
+  if (pos_first != -1) {
+    path_specific_resource =
+        path_api_resource.substr(pos_first + 1, path_api_resource.size());
+    pos_first = path_specific_resource.find_first_of("/");
+    if (pos_first != -1) {
+      path_channel_resource = path_specific_resource.substr(
+          pos_first + 1, path_specific_resource.size());
+    }
+  }
+  if (Req.Method == "GET") {
+    if (path_specific_resource.find("triggers") != std::string::npos) {
+      // get triggers info
+      if (!path_channel_resource.compare("vmd_0")) {
+        content = R"(
+                      {
+                        "iNotificationCenterEnabled": 0,
+                        "iNotificationEmailEnabled": 0,
+                        "iNotificationFTPEnabled": 0,
+                        "iNotificationIO1Enabled": 0,
+                        "iNotificationRecord1Enabled": 0,
+                        "iVideoInputChannelID": 0,
+                        "id": 0,
+                        "sEventType": "VMD"
+                      }
+                    )"_json;
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else if (!path_channel_resource.compare("vri_0")) {
+        content = R"(
+                      {
+                        "iNotificationCenterEnabled": 0,
+                        "iNotificationEmailEnabled": 0,
+                        "iNotificationFTPEnabled": 0,
+                        "iNotificationIO1Enabled": 0,
+                        "iNotificationRecord1Enabled": 0,
+                        "iVideoInputChannelID": 0,
+                        "id": 1,
+                        "sEventType": "VRI"
+                      }
+                    )"_json;
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (path_specific_resource.find("schedules") != std::string::npos) {
+      // get schedules info
+      if (!path_channel_resource.empty()) {
+        int para_id = GetScheduleId(path_channel_resource);
+        // minilog_debug("id is %d", para_id);
+        if (para_id >= 0) {
+          content = R"(
+                        {
+                          "sSchedulesJson": "[[],[],[],[],[],[],[]]"
+                        }
+                      )"_json;
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (path_specific_resource.find("motion-detection") !=
+               std::string::npos) {
+      // get motion detection info
+      if (!path_channel_resource.compare("0")) {
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (path_specific_resource.find("regional-invasion") !=
+               std::string::npos) {
+      // get regional invasion info
+      if (!path_channel_resource.compare("0")) {
+        content = regional_invasion_get();
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (!path_specific_resource.compare("face-list")) {
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("face/") != std::string::npos) {
+      // get face info
+      if (!path_channel_resource.empty()) {
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      }
+    } else if (!path_specific_resource.compare("face-config")) {
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (!path_specific_resource.compare("face-waiting")) {
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("smart") != std::string::npos) {
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (!path_specific_resource.compare("last-face")) {
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else {
+      Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+    }
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+    nlohmann::json event_config = Req.PostObject; /* must be json::object */
+    char *config = new char[Req.ContentLength + 1];
+    strncpy(config, event_config.dump().c_str(), Req.ContentLength);
+    config[Req.ContentLength] = '\0';
+    if (path_specific_resource.find("triggers/") != std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (!path_channel_resource.compare("vmd_0")) {
+        // // set
+        // dbserver_event_set((char *)TABLE_EVENT_TRIGGERS, config, 0);
+        // mediaserver_sync_schedules();
+        // // get new info
+        // str = dbserver_event_get((char *)TABLE_EVENT_TRIGGERS);
+        // content = nlohmann::json::parse(str).at("jData").at(0);
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else if (!path_channel_resource.compare("vri_0")) {
+        // // set
+        // dbserver_event_set((char *)TABLE_EVENT_TRIGGERS, config, 1);
+        // // get new info
+        // str = dbserver_event_get((char *)TABLE_EVENT_TRIGGERS);
+        // content = nlohmann::json::parse(str).at("jData").at(1);
+        content = R"(
+                      {
+                        "iNotificationCenterEnabled": 0,
+                        "iNotificationEmailEnabled": 0,
+                        "iNotificationFTPEnabled": 0,
+                        "iNotificationIO1Enabled": 0,
+                        "iNotificationRecord1Enabled": 0,
+                        "iVideoInputChannelID": 0,
+                        "id": 1,
+                        "sEventType": "VRI"
+                      }
+                    )"_json;
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (path_specific_resource.find("motion-detection/") !=
+               std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (!path_channel_resource.compare("0")) {
+        // // set
+        // dbserver_event_set((char *)TABLE_MOVE_DETECTION, config, 0);
+        // // get new info
+        // str = dbserver_event_get((char *)TABLE_MOVE_DETECTION);
+        // content = nlohmann::json::parse(str).at("jData").at(0);
+        // move_detect_item_set(content, 0);
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else if (path_specific_resource.find("regional-invasion/") !=
+               std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (!path_channel_resource.compare("0")) {
+        // set
+        int value_int;
+        nlohmann::json param = event_config;
+        if (param.dump().find("iEnabled") != param.dump().npos) {
+          value_int = atoi(param.at("iEnabled").dump().c_str());
+          rk_event_ri_set_enabled(value_int);
+        }
+        if (param.dump().find("iPositionX") != param.dump().npos) {
+          value_int = atoi(param.at("iPositionX").dump().c_str());
+          rk_event_ri_set_position_x(value_int);
+        }
+        if (param.dump().find("iPositionY") != param.dump().npos) {
+          value_int = atoi(param.at("iPositionY").dump().c_str());
+          rk_event_ri_set_position_y(value_int);
+        }
+        if (param.dump().find("iHeight") != param.dump().npos) {
+          value_int = atoi(param.at("iHeight").dump().c_str());
+          rk_event_ri_set_height(value_int);
+        }
+        if (param.dump().find("iWidth") != param.dump().npos) {
+          value_int = atoi(param.at("iWidth").dump().c_str());
+          rk_event_ri_set_width(value_int);
+        }
+        if (param.dump().find("iProportion") != param.dump().npos) {
+          value_int = atoi(param.at("iProportion").dump().c_str());
+          rk_event_ri_set_proportion(value_int);
+        }
+        if (param.dump().find("iSensitivityLevel") != param.dump().npos) {
+          value_int = atoi(param.at("iSensitivityLevel").dump().c_str());
+          rk_event_ri_set_sensitivity_level(value_int);
+        }
+        if (param.dump().find("iTimeThreshold") != param.dump().npos) {
+          value_int = atoi(param.at("iTimeThreshold").dump().c_str());
+          rk_event_ri_set_time_threshold(value_int);
+        }
+        // get new info
+        content = regional_invasion_get();
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      } else if (path_specific_resource.find("schedules") !=
+                 std::string::npos) {
+#ifdef ENABLE_JWT
+        if (user_level > 1) {
+          Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+          return;
+        }
+#endif
+        if (!path_channel_resource.empty()) {
+          // set
+          int para_id = GetScheduleId(path_channel_resource);
+          if (para_id >= 0) {
+            // dbserver_event_set((char *)TABLE_EVENT_SCHEDULES, config,
+            // para_id);
+            // mediaserver_sync_schedules();
+            // str = dbserver_event_get((char *)TABLE_EVENT_SCHEDULES);
+            // content = nlohmann::json::parse(str).at("jData").at(para_id);
+            // content.erase("id");
+            content = R"(
+                        {
+                          "sSchedulesJson": "[[],[],[],[],[],[],[]]"
+                        }
+                      )"_json;
+            Resp.setHeader(HttpStatus::kOk, "OK");
+            Resp.setApiData(content);
+          } else {
+            Resp.setErrorResponse(HttpStatus::kNotImplemented,
+                                  "Not Implemented");
+          }
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      } else {
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      }
+    } else {
+      Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+    }
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else // #ifdef USE_RKIPC
 
 nlohmann::json regional_invasion_get() {
   char *str;
@@ -146,7 +470,8 @@ nlohmann::json face_list_search_by_name(nlohmann::json serach_conditions) {
   std::string name = serach_conditions.at("name");
   std::string condition = "from FaceList where sName like '%" + name + "%'";
   std::string cmd = "select count(*) " + condition;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
       nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
@@ -187,7 +512,8 @@ nlohmann::json snapshot_record_search(nlohmann::json serach_conditions) {
   std::string conditions = "from FaceSnapshotRecord where (sTime between '" +
                            begin_time + "' and '" + end_time + "')";
   std::string cmd = "select count(*) " + conditions;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
       nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
@@ -244,22 +570,24 @@ control_record_search_by_condition(nlohmann::json serach_conditions) {
       "(FaceControlRecord.sTime between '" +
       begin_time + "' and '" + end_time + "') and " + gender_condition;
   std::string cmd = "select count(*) " + conditions;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
       nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
 #else
   std::string conditions =
-    "from FaceList inner join FaceControlRecord where (FaceList.id = "
-    "FaceControlRecord.iFaceId) and (FaceList.iAge between " +
-    std::to_string(age_min) + " and " + std::to_string(age_max) +
-    ") and (FaceList.iAccessCardNumber = " +
-    std::to_string(access_card_number) +
-    ") and "
-    "(FaceControlRecord.sTime between '" +
-    begin_time + "' and '" + end_time + "') and " + gender_condition;
+      "from FaceList inner join FaceControlRecord where (FaceList.id = "
+      "FaceControlRecord.iFaceId) and (FaceList.iAge between " +
+      std::to_string(age_min) + " and " + std::to_string(age_max) +
+      ") and (FaceList.iAccessCardNumber = " +
+      std::to_string(access_card_number) +
+      ") and "
+      "(FaceControlRecord.sTime between '" +
+      begin_time + "' and '" + end_time + "') and " + gender_condition;
   std::string cmd = "select count(*) " + conditions;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
       nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
@@ -302,25 +630,28 @@ nlohmann::json control_record_search_by_name(nlohmann::json serach_conditions) {
   int end_position = serach_conditions.at("endPosition");
   std::string name = serach_conditions.at("name");
 #ifdef MEDIASERVER_ROCKFACE
-  std::string conditions = "from FaceList inner join FaceControlRecord where "
-                           "(FaceList.iFaceDBId = FaceControlRecord.iFaceId) and "
-                           "(FaceList.sName like '%" +
-                           name + "%')";
+  std::string conditions =
+      "from FaceList inner join FaceControlRecord where "
+      "(FaceList.iFaceDBId = FaceControlRecord.iFaceId) and "
+      "(FaceList.sName like '%" +
+      name + "%')";
 
   std::string cmd = "select count(*) " + conditions;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
       nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
 #else
   std::string conditions = "from FaceList inner join FaceControlRecord where "
-                "(FaceList.id = FaceControlRecord.iFaceId) and "
-                "(FaceList.sName like '%" +
-                name + "%')";
+                           "(FaceList.id = FaceControlRecord.iFaceId) and "
+                           "(FaceList.sName like '%" +
+                           name + "%')";
   std::string cmd = "select count(*) " + conditions;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   std::string result_num =
-    nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
+      nlohmann::json::parse(str).at("jData").at(0).at("count(*)");
   int num_of_matches = stoi(result_num);
 #endif
   cmd = "select * " + conditions + " limit " + std::to_string(begin_position) +
@@ -352,23 +683,10 @@ nlohmann::json control_record_search_by_name(nlohmann::json serach_conditions) {
   return result;
 }
 
-int GetScheduleId(std::string schedule_name) {
-  if (!schedule_name.compare("motion")) {
-    return 0;
-  } else if (!schedule_name.compare("intrusion")) {
-    return 1;
-  } else if (!schedule_name.compare("video-plan")) {
-    return 2;
-  } else if (!schedule_name.compare("screenshot")) {
-    return 3;
-  } else {
-    return -1;
-  }
-}
-
 void move_detect_item_set(nlohmann::json config, int id) {
   if (!config.empty()) {
-    mediaserver_set((char *)TABLE_MOVE_DETECTION, id, (char *)config.dump().c_str());
+    mediaserver_set((char *)TABLE_MOVE_DETECTION, id,
+                    (char *)config.dump().c_str());
   }
 }
 
@@ -376,7 +694,8 @@ void region_invade_item_set(nlohmann::json config, int id) {
   if (!config.empty()) {
     nlohmann::json param = config.at("regionalInvasion");
     if (!config.empty()) {
-      mediaserver_set((char *)TABLE_REGIONAL_INVASION, id, (char *)param.dump().c_str());
+      mediaserver_set((char *)TABLE_REGIONAL_INVASION, id,
+                      (char *)param.dump().c_str());
     }
   }
 }
@@ -435,7 +754,8 @@ void smart_cover_set(nlohmann::json smart_cover) {
   delete[] event_config;
 }
 
-void set_mediaserver_face_config(nlohmann::json new_cfg, nlohmann::json old_cfg) {
+void set_mediaserver_face_config(nlohmann::json new_cfg,
+                                 nlohmann::json old_cfg) {
   nlohmann::json diff = nlohmann::json::diff(new_cfg, old_cfg);
   // minilog_error("diff %s\n", diff.dump().c_str());
   for (auto &x : nlohmann::json::iterator_wrapper(old_cfg)) {
@@ -446,9 +766,11 @@ void set_mediaserver_face_config(nlohmann::json new_cfg, nlohmann::json old_cfg)
   mediaserver_set((char *)TABLE_FACE_CONFIG, 0, new_cfg.dump().c_str());
 }
 
-void reset_face_db_and_delete_pic(std::string table, std::string path_key, int delete_face_db) {
+void reset_face_db_and_delete_pic(std::string table, std::string path_key,
+                                  int delete_face_db) {
   std::string cmd = "select " + path_key + " from " + table;
-  char *str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+  char *str =
+      dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
   nlohmann::json rst;
   if (str) {
     rst = nlohmann::json::parse(str).at("jData");
@@ -467,9 +789,10 @@ void reset_face_db_and_delete_pic(std::string table, std::string path_key, int d
   if (delete_face_db)
     mediaserver_clear_face_db();
 #endif
-	dbserver_face_reset((char *)table.c_str());
+  dbserver_face_reset((char *)table.c_str());
   dbserver_reset_face_table((char *)table.c_str());
-  minilog_debug("delete table is %s, pic path key is %s\n", (char *)table.c_str(), (char *)path_key.c_str());
+  minilog_debug("delete table is %s, pic path key is %s\n",
+                (char *)table.c_str(), (char *)path_key.c_str());
 }
 
 void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
@@ -600,8 +923,9 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       Resp.setApiData(content);
     } else if (!path_specific_resource.compare("last-face")) {
       int id = -1;
-      str = dbserver_sql((char *)"select * from FaceList ORDER BY id DESC LIMIT 1",
-                           (char *)DBSERVER_EVENT_INTERFACE);
+      str = dbserver_sql(
+          (char *)"select * from FaceList ORDER BY id DESC LIMIT 1",
+          (char *)DBSERVER_EVENT_INTERFACE);
       nlohmann::json face_last = nlohmann::json::parse(str).at("jData");
       if (!face_last.empty()) {
         id = face_last.at(0).at("id");
@@ -779,13 +1103,18 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       for (auto p : Req.Params) {
         if (p.Key == "id") {
           std::string id_str = p.Value;
-          std::string cmd = "select sName, iLoadCompleted, sPicturePath from FaceList where (id > " + id_str + ") and (iLoadCompleted != 1)";
-          str = dbserver_sql((char *)cmd.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+          std::string cmd = "select sName, iLoadCompleted, sPicturePath from "
+                            "FaceList where (id > " +
+                            id_str + ") and (iLoadCompleted != 1)";
+          str = dbserver_sql((char *)cmd.c_str(),
+                             (char *)DBSERVER_EVENT_INTERFACE);
           if (str) {
             content = nlohmann::json::parse(str).at("jData");
           }
-          std::string cmd_delete = "delete from FaceList where (id > " + id_str + ") and (iLoadCompleted != 1)";
-          dbserver_sql((char *)cmd_delete.c_str(), (char *)DBSERVER_EVENT_INTERFACE);
+          std::string cmd_delete = "delete from FaceList where (id > " +
+                                   id_str + ") and (iLoadCompleted != 1)";
+          dbserver_sql((char *)cmd_delete.c_str(),
+                       (char *)DBSERVER_EVENT_INTERFACE);
           if (content.empty()) {
             break;
           }
@@ -809,7 +1138,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       }
 #endif
       reset_face_db_and_delete_pic(TABLE_FACE_LIST, "sPicturePath", 1);
-      reset_face_db_and_delete_pic(TABLE_FACE_CONTROL_RECORD, "sSnapshotPath", 0);
+      reset_face_db_and_delete_pic(TABLE_FACE_CONTROL_RECORD, "sSnapshotPath",
+                                   0);
       Resp.setHeader(HttpStatus::kOk, "OK");
     } else if (!path_specific_resource.compare("reset-snap")) {
 #ifdef ENABLE_JWT
@@ -818,7 +1148,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         return;
       }
 #endif
-      reset_face_db_and_delete_pic(TABLE_FACE_SNAPSHOT_RECORD, "sPicturePath", 0);
+      reset_face_db_and_delete_pic(TABLE_FACE_SNAPSHOT_RECORD, "sPicturePath",
+                                   0);
       Resp.setHeader(HttpStatus::kOk, "OK");
     } else if (!path_specific_resource.compare("reset-control")) {
 #ifdef ENABLE_JWT
@@ -827,7 +1158,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         return;
       }
 #endif
-      reset_face_db_and_delete_pic(TABLE_FACE_CONTROL_RECORD, "sSnapshotPath", 0);
+      reset_face_db_and_delete_pic(TABLE_FACE_CONTROL_RECORD, "sSnapshotPath",
+                                   0);
       Resp.setHeader(HttpStatus::kOk, "OK");
     } else if (path_specific_resource.find("face-picture") !=
                std::string::npos) {
@@ -854,8 +1186,11 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
               picture_file.close();
               if (end_position == Req.Files.at(i).getDataLength()) {
 #ifdef MEDIASERVER_ROCKFACE
-                str = dbserver_event_get_by_key_char((char *)TABLE_FACE_LIST, (char *)"sPicturePath", (char *)new_file_path.c_str());
-                nlohmann::json info_cfg = nlohmann::json::parse(str).at("jData");
+                str = dbserver_event_get_by_key_char(
+                    (char *)TABLE_FACE_LIST, (char *)"sPicturePath",
+                    (char *)new_file_path.c_str());
+                nlohmann::json info_cfg =
+                    nlohmann::json::parse(str).at("jData");
                 if (!info_cfg.empty()) {
                   int id = info_cfg.at(0).at("id");
                   mediaserver_set_face_image(id, new_file_path.c_str());
@@ -893,8 +1228,9 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       int id = 0;
       if (path_channel_resource.empty()) {
         // path is face
-        str = dbserver_sql((char *)"select * from FaceList ORDER BY id DESC LIMIT 1",
-                           (char *)DBSERVER_EVENT_INTERFACE);
+        str = dbserver_sql(
+            (char *)"select * from FaceList ORDER BY id DESC LIMIT 1",
+            (char *)DBSERVER_EVENT_INTERFACE);
         nlohmann::json face_last = nlohmann::json::parse(str).at("jData");
         if (!face_last.empty()) {
           id = face_last.at(0).at("id");
@@ -924,10 +1260,11 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
             path_new = content.at("sPicturePath");
             // move picture to new path
             int face_id = content.at("iFaceDBId");
-            // minilog_debug("in modify, old_face_id is %d, face id is %d\n", old_face_id, face_id);
+            // minilog_debug("in modify, old_face_id is %d, face id is %d\n",
+            // old_face_id, face_id);
             // before a new pic set, send face_id = -2 to delete old data
             if (face_id == -2 && old_face_id >= 0) {
-                mediaserver_delete_face(id, old_face_id);
+              mediaserver_delete_face(id, old_face_id);
             }
             if (path_old.compare(path_new)) {
               std::string cmd = "mv \"" + path_old + "\" \"" + path_new + "\"";
@@ -998,7 +1335,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         int id = stoi(path_channel_resource);
         char *delete_string = dbserver_face_list_delete(id);
         if (strlen(delete_string) > 0) {
-          nlohmann::json delete_info = nlohmann::json::parse(delete_string).at("jData");
+          nlohmann::json delete_info =
+              nlohmann::json::parse(delete_string).at("jData");
           std::string path = delete_info.at(0).at("sPicturePath");
           unlink((char *)path.c_str());
 #ifdef MEDIASERVER_ROCKFACE
@@ -1015,8 +1353,10 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
 #ifdef MEDIASERVER_ROCKFACE
             mediaserver_delete_face(id, face_id);
 #endif
-            char *delete_str = dbserver_event_get_by_key_int((char *)TABLE_FACE_CONTROL_RECORD, (char *)"iFaceId", face_id);
-            nlohmann::json control_data = nlohmann::json::parse(delete_str).at("jData");
+            char *delete_str = dbserver_event_get_by_key_int(
+                (char *)TABLE_FACE_CONTROL_RECORD, (char *)"iFaceId", face_id);
+            nlohmann::json control_data =
+                nlohmann::json::parse(delete_str).at("jData");
             if (control_data.size() > 0) {
               nlohmann::json delete_list;
               for (auto &x : nlohmann::json::iterator_wrapper(control_data)) {
@@ -1026,7 +1366,9 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
                   unlink((char *)sanp_path.c_str());
                 }
               }
-              dbserver_event_delete_by_key_int((char *)TABLE_FACE_CONTROL_RECORD, (char *)"iFaceId", face_id);
+              dbserver_event_delete_by_key_int(
+                  (char *)TABLE_FACE_CONTROL_RECORD, (char *)"iFaceId",
+                  face_id);
             }
           }
         } else {
@@ -1047,7 +1389,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         for (auto p : Req.Params) {
           if (p.Key == "delete") {
             int id = stoi(p.Value);
-            dbserver_event_delete_by_key_int((char *)TABLE_FACE_CONTROL_RECORD, (char *)"id", id);
+            dbserver_event_delete_by_key_int((char *)TABLE_FACE_CONTROL_RECORD,
+                                             (char *)"id", id);
           }
         }
         Resp.setHeader(HttpStatus::kOk, "OK");
@@ -1065,7 +1408,8 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         for (auto p : Req.Params) {
           if (p.Key == "delete") {
             int id = stoi(p.Value);
-            dbserver_event_delete_by_key_int((char *)TABLE_FACE_SNAPSHOT_RECORD, (char *)"id", id);
+            dbserver_event_delete_by_key_int((char *)TABLE_FACE_SNAPSHOT_RECORD,
+                                             (char *)"id", id);
           }
         }
         Resp.setHeader(HttpStatus::kOk, "OK");
@@ -1077,6 +1421,7 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+#endif
 
 } // namespace cgi
 } // namespace rockchip

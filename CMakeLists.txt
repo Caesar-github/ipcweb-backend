@@ -15,6 +15,7 @@ set(DESCRIPTION "IP Camera web backend cgi projects")
 option(IPCWEBBACKEND_BUILD_TESTS  "Build tests executables" ON)
 option(ENABLE_JWT  "enbale jwt" ON)
 option(MEDIASERVER_ROCKFACE  "enbale mediaserver rockface" OFF)
+option(USE_RKIPC  "use rkipc" OFF)
 
 set(PROJECT_THIRDPARTY_DIR "${CMAKE_SOURCE_DIR}/thirdparty")
 include(clang-format)

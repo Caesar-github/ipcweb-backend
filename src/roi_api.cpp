@@ -3,11 +3,36 @@
 // found in the LICENSE file.
 
 #include "roi_api.h"
-#include <dbserver.h>
-#include <mediaserver.h>
+#include "common.h"
 
 namespace rockchip {
 namespace cgi {
+
+#ifdef USE_RKIPC
+
+void ROIApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  nlohmann::json content;
+#ifdef ENABLE_JWT
+  int user_level = Req.UserLevel;
+#endif
+  if (Req.Method == "GET") {
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+#ifdef ENABLE_JWT
+    if (user_level > 1) {
+      Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+      return;
+    }
+#endif
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else // #ifdef USE_RKIPC
 
 nlohmann::json roi_all_info_get(void) {
   nlohmann::json roi_all_info;
@@ -196,6 +221,8 @@ void ROIApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+
+#endif
 
 } // namespace cgi
 } // namespace rockchip

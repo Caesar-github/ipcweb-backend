@@ -4,15 +4,333 @@
 
 #include "storage_api.h"
 #include "common.h"
-#include <dbserver.h>
-#include <mediaserver.h>
-#include <netserver.h>
-#include <storage_manager.h>
 #include <time.h>
 #include <unistd.h>
 
 namespace rockchip {
 namespace cgi {
+
+#ifdef USE_RKIPC
+
+void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  int hdd_id = 3;
+  std::string path_api_resource;
+  std::string path_specific_resource;
+  std::string path_hdd_id;
+  nlohmann::json content;
+#ifdef ENABLE_JWT
+  int user_level = Req.UserLevel;
+#endif
+
+  /* Get Path Information */
+  int pos_first = Req.PathInfo.find_first_of("/");
+  path_api_resource = Req.PathInfo.substr(pos_first + 1, Req.PathInfo.size());
+  pos_first = path_api_resource.find_first_of("/");
+  if (pos_first != -1) {
+    path_specific_resource =
+        path_api_resource.substr(pos_first + 1, path_api_resource.size());
+    pos_first = path_specific_resource.find_first_of("/");
+    if (pos_first != -1)
+      path_hdd_id = path_specific_resource.substr(
+          pos_first + 1, path_specific_resource.size() + 1);
+  }
+
+  if (Req.Method == "GET") {
+    if (path_specific_resource.find("hdd-list") != std::string::npos) {
+      if (path_hdd_id.empty()) { /* path is storage/hdd-list */
+        content = R"(
+      [{
+	"iFormatProg": 0,
+	"iFormatStatus": 0,
+	"iFreeSize": 0,
+	"iMediaSize": 0,
+	"iTotalSize": 0,
+	"id": 1,
+	"sDev": "",
+	"sFormatErr": "",
+	"sMountPath": "/mnt/sdcard",
+	"sName": "SD Card",
+	"sStatus": "unmounted",
+	"sType": ""
+}, {
+	"iFormatProg": 0,
+	"iFormatStatus": 0,
+	"iFreeSize": 12.0438613891602,
+	"iMediaSize": 60972,
+	"iTotalSize": 12.1327171325684,
+	"id": 3,
+	"sAttributes": "rw",
+	"sDev": "/dev/block/by-name/media",
+	"sFormatErr": "",
+	"sMountPath": "/userdata/media",
+	"sName": "Emmc",
+	"sStatus": "mounted",
+	"sType": "ext2"
+}, {
+	"iFormatProg": 0,
+	"iFormatStatus": 0,
+	"iFreeSize": 0,
+	"iMediaSize": 0,
+	"iTotalSize": 0,
+	"id": 2,
+	"sDev": "",
+	"sFormatErr": "",
+	"sMountPath": "/media/usb0",
+	"sName": "U Disk",
+	"sStatus": "unmounted",
+	"sType": ""
+}]
+    )"_json;
+      } else { /* path example is storage/hdd-list/1 */
+        // hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        // nlohmann::json hdd_list = storage_hdd_list_get();
+        // content = hdd_list.at(hdd_id - 1);
+      }
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("quota") != std::string::npos) {
+      // if (path_hdd_id.empty()) { /* path is storage/quota */
+      //   // Can only get current storage device quota, here only for test
+      //   for (int i = 0; i < storage_hdd_list_get().size(); i++) {
+      //     content.push_back(storage_quota_get(i + 1));
+      //   }
+      // } else { /* path example is storage/quota/1 */
+      //   hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+      //   content = storage_quota_get(hdd_id);
+      // }
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("snap-plan") != std::string::npos) {
+      if (path_hdd_id.empty()) { /* path is storage/snap-plan */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else {
+        hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        if (hdd_id == 0) { /* path is storage/snap-plan/0 */
+          // content = storage_plan_get(hdd_id);
+          // content.erase("iShotNumber");
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else if (hdd_id == 1) { /* path is storage/snap-plan/1 */
+          // content = storage_plan_get(hdd_id);
+          // Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      }
+    } else if (!path_specific_resource.compare("current-path")) {
+      // /* path is storage/current-path */
+      // char *str = storage_manager_get_media_path();
+      // std::string path = nlohmann::json::parse(str).at("sMountPath");
+      // content.emplace("sMountPath", path);
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("advance-para") !=
+               std::string::npos) {
+      if (path_hdd_id.empty()) { /* path is storage/advance-para */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else {
+        hdd_id =
+            atoi((char *)path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        // char *str = dbserver_storage_get((char *)TABLE_STORAGE_ADVANCE_PARA);
+        if (!hdd_id) {
+          // content = nlohmann::json::parse(str).at("jData").at(hdd_id);
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      }
+    } else {
+      Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+    }
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+    int video_quota_ratio;
+    int picture_quota_ratio;
+    int camera_id = 0;
+    nlohmann::json diff;
+    nlohmann::json cfg_old;
+    nlohmann::json storage_config = Req.PostObject; /* must be json::object */
+    if (path_specific_resource.find("quota") != std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (path_hdd_id.empty()) { /* path is storage/quota */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else { /* path example is storage/quota/1 */
+        // nlohmann::json hdd_list = storage_hdd_list_get();
+        // hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        // std::string path_name = get_hdd_name_by_id(hdd_list, hdd_id);
+        // minilog_debug("quota path_name is %s\n", (char *)path_name.c_str());
+        // /* Set */
+        // if (!path_name.empty())
+        //   dbserver_update_storage_config_mountpath((char
+        //   *)path_name.c_str());
+        // else if (hdd_id == 1)
+        //   dbserver_update_storage_config_mountpath((char *)"/mnt/sdcard");
+        // else if (hdd_id == 2)
+        //   dbserver_update_storage_config_mountpath((char *)"/media/usb0");
+        // else if (hdd_id == 3)
+        //   dbserver_update_storage_config_mountpath((char
+        //   *)"/userdata/media");
+
+        // if (!storage_config.empty()) {
+        //   video_quota_ratio =
+        //       atoi(storage_config.at("iVideoQuotaRatio").dump().c_str());
+        //   picture_quota_ratio =
+        //       atoi(storage_config.at("iPictureQuotaRatio").dump().c_str());
+        //   dbserver_update_storage_media_folder_duty(camera_id, 0,
+        //                                             video_quota_ratio, -1);
+        //   dbserver_update_storage_media_folder_duty(camera_id, 1,
+        //                                             picture_quota_ratio, -1);
+        // }
+        // /* Get new info */
+        // content = storage_quota_get(hdd_id);
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      }
+    } else if (path_specific_resource.find("format") != std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (path_hdd_id.empty()) { /* path is storage/format */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else { /* path is storage/format/1 */
+        // hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        // std::string path_name = get_hdd_name_by_id(NULL, hdd_id);
+        // minilog_debug("format path_name is %s\n", (char *)path_name.c_str());
+        // /* Set */
+        // if (!path_name.empty())
+        //   storage_manager_diskformat((char *)path_name.c_str(), (char
+        //   *)"fat32");
+        // else if (hdd_id == 1)
+        //   storage_manager_diskformat((char *)"/mnt/sdcard", (char *)"fat32");
+        // else if (hdd_id == 2)
+        //   storage_manager_diskformat((char *)"/media/usb0", (char *)"fat32");
+        // else if (hdd_id == 3)
+        //   storage_manager_diskformat((char *)"/userdata/media", (char
+        //   *)"fat32");
+        Resp.setHeader(HttpStatus::kOk, "OK");
+        Resp.setApiData(content);
+      }
+    } else if (!path_specific_resource.compare("search")) {
+      // if (!storage_config.empty())
+      //   content = search_file_list_get(storage_config);
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else if (path_specific_resource.find("snap-plan") != std::string::npos) {
+      if (path_hdd_id.empty()) { /* path is storage/snap-plan */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else {
+        hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        if (hdd_id == 0) { /* path is storage/snap-plan/0 */
+          // /* Erase unchanged data */
+          // cfg_old = storage_plan_get(0);
+          // cfg_old.erase("iShotNumber");
+          // diff = nlohmann::json::diff(cfg_old, storage_config);
+          // for (auto &x : nlohmann::json::iterator_wrapper(cfg_old)) {
+          //   if (diff.dump().find(x.key()) == diff.dump().npos)
+          //     storage_config.erase(x.key());
+          // }
+          // /* Set */
+          // if (!storage_config.empty()) {
+          //   dbserver_set_storage_plan_snap(
+          //       (char *)storage_config.dump().c_str(), 0);
+          //   mediaserver_sync_schedules();
+          // }
+          // /* Get new info */
+          // content = storage_plan_get(0);
+          // content.erase("iShotNumber");
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else if (hdd_id == 1) { /* path is storage/snap-plan/1 */
+          // /* Erase unchanged data */
+          // cfg_old = storage_plan_get(1);
+          // diff = nlohmann::json::diff(cfg_old, storage_config);
+          // for (auto &x : nlohmann::json::iterator_wrapper(cfg_old)) {
+          //   if (diff.dump().find(x.key()) == diff.dump().npos)
+          //     storage_config.erase(x.key());
+          // }
+          // /* Set */
+          // if (!storage_config.empty())
+          //   dbserver_set_storage_plan_snap(
+          //       (char *)storage_config.dump().c_str(), 1);
+          // /* Get new info */
+          // content = storage_plan_get(1);
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      }
+    } else if (path_specific_resource.find("advance-para") !=
+               std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      if (path_hdd_id.empty()) { /* path is storage/advance-para */
+        Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+      } else {
+        hdd_id = atoi(path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        if (!hdd_id) {
+          // char *str = dbserver_storage_get((char
+          // *)TABLE_STORAGE_ADVANCE_PARA);
+          // nlohmann::json old_config =
+          //     nlohmann::json::parse(str).at("jData").at(hdd_id);
+          // nlohmann::json diff =
+          //     nlohmann::json::diff(old_config, storage_config);
+          // for (auto &x : nlohmann::json::iterator_wrapper(old_config)) {
+          //   if (diff.dump().find(x.key()) == diff.dump().npos)
+          //     storage_config.erase(x.key());
+          // }
+          // if (!storage_config.empty()) {
+          //   dbserver_storage_set((char *)TABLE_STORAGE_ADVANCE_PARA,
+          //                        (char *)storage_config.dump().c_str(),
+          //                        hdd_id);
+          //   mediaserver_sync_schedules();
+          // }
+          // str = dbserver_storage_get((char *)TABLE_STORAGE_ADVANCE_PARA);
+          // content = nlohmann::json::parse(str).at("jData").at(hdd_id);
+          Resp.setHeader(HttpStatus::kOk, "OK");
+          Resp.setApiData(content);
+        } else {
+          Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+        }
+      }
+    } else if (path_specific_resource.find("delete") != std::string::npos) {
+#ifdef ENABLE_JWT
+      if (user_level > 1) {
+        Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+        return;
+      }
+#endif
+      // nlohmann::json file_list = storage_config.at("name");
+      // std::string delete_type = storage_config.at("type");
+      // int rst = 1;
+      // if (!file_list.empty()) {
+      //   rst = media_file_delete(delete_type, file_list);
+      // }
+      // content.emplace("rst", rst);
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
+    } else {
+      Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+    }
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else // #ifdef USE_RKIPC
 
 std::string file_address_get(std::string path, std::string name) {
   std::string address;
@@ -211,31 +529,32 @@ int media_file_delete(std::string delete_type, nlohmann::json file_list) {
   char *str = storage_manager_get_media_path();
   nlohmann::json scan_path = nlohmann::json::parse(str).at("sScanPath");
   std::string path = scan_path.at(path_id).at("sMediaPath");
-  for (auto &x: nlohmann::json::iterator_wrapper(file_list)) {
+  for (auto &x : nlohmann::json::iterator_wrapper(file_list)) {
     std::string delete_name = x.value();
     if (delete_name.find("/") == std::string::npos) {
       std::string delete_path = path + "/" + delete_name;
       int rst = unlink((char *)delete_path.c_str());
     } else {
-      minilog_debug("media_file_delete: unlaw name is %s", (char *)delete_name.c_str());
+      minilog_debug("media_file_delete: unlaw name is %s",
+                    (char *)delete_name.c_str());
     }
   }
   return 1;
 }
 
 std::string get_hdd_name_by_id(nlohmann::json hdd_list, int id) {
-    if (NULL == hdd_list) {
-        hdd_list = storage_hdd_list_get();
+  if (NULL == hdd_list) {
+    hdd_list = storage_hdd_list_get();
+  }
+  for (auto &x : nlohmann::json::iterator_wrapper(hdd_list)) {
+    nlohmann::json pat = x.value();
+    int hdd_id = pat.at("id");
+    if (hdd_id == id) {
+      std::string mount_path = pat.at("sMountPath");
+      return mount_path;
     }
-    for (auto &x : nlohmann::json::iterator_wrapper(hdd_list)) {
-        nlohmann::json pat = x.value();
-        int hdd_id = pat.at("id");
-        if (hdd_id == id) {
-            std::string mount_path = pat.at("sMountPath");
-            return mount_path;
-        }
-    }
-    return "";
+  }
+  return "";
 }
 
 void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
@@ -314,7 +633,8 @@ void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       if (path_hdd_id.empty()) { /* path is storage/advance-para */
         Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
       } else {
-        hdd_id = atoi((char *)path_hdd_id.substr(0, path_hdd_id.size()).c_str());
+        hdd_id =
+            atoi((char *)path_hdd_id.substr(0, path_hdd_id.size()).c_str());
         char *str = dbserver_storage_get((char *)TABLE_STORAGE_ADVANCE_PARA);
         if (!hdd_id) {
           content = nlohmann::json::parse(str).at("jData").at(hdd_id);
@@ -388,13 +708,15 @@ void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         minilog_debug("format path_name is %s\n", (char *)path_name.c_str());
         /* Set */
         if (!path_name.empty())
-          storage_manager_diskformat((char *)path_name.c_str(), (char *)"fat32");
+          storage_manager_diskformat((char *)path_name.c_str(),
+                                     (char *)"fat32");
         else if (hdd_id == 1)
           storage_manager_diskformat((char *)"/mnt/sdcard", (char *)"fat32");
         else if (hdd_id == 2)
           storage_manager_diskformat((char *)"/media/usb0", (char *)"fat32");
         else if (hdd_id == 3)
-          storage_manager_diskformat((char *)"/userdata/media", (char *)"fat32");
+          storage_manager_diskformat((char *)"/userdata/media",
+                                     (char *)"fat32");
         Resp.setHeader(HttpStatus::kOk, "OK");
         Resp.setApiData(content);
       }
@@ -483,8 +805,7 @@ void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
           Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
         }
       }
-    } else if (path_specific_resource.find("delete") !=
-               std::string::npos) {
+    } else if (path_specific_resource.find("delete") != std::string::npos) {
 #ifdef ENABLE_JWT
       if (user_level > 1) {
         Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
@@ -507,6 +828,8 @@ void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+
+#endif
 
 } // namespace cgi
 } // namespace rockchip

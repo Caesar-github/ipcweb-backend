@@ -7,9 +7,17 @@
 
 #include "api_handler.h"
 #include "jwt-cpp/jwt.h"
+
+#ifdef USE_RKIPC
+#include "socket_client/client.h"
+#else
 #include <dbserver.h>
-#include <fstream>
+#include <mediaserver.h>
 #include <netserver.h>
+#include <storage_manager.h>
+#include <system_manager.h>
+#endif
+#include <fstream>
 #include <time.h>
 
 #define SECRET "rockchip"

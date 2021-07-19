@@ -32,9 +32,6 @@ target_include_directories(restapi
     )
 target_link_libraries(restapi
     PRIVATE
-    rkdb
-    gdbus
-    IPCProtocol
     OpenSSL::Crypto
     Cgicc::Cgicc
     pthread
@@ -44,10 +41,14 @@ target_link_libraries(restapi
 
 add_executable(entry.cgi
     main.cpp)
+
 target_compile_features(entry.cgi PRIVATE cxx_std_14)
-target_link_libraries(entry.cgi
-    PRIVATE
-    restapi)
+if (${USE_RKIPC})
+    add_definitions(-DUSE_RKIPC)
+    target_link_libraries(entry.cgi PRIVATE restapi)
+else()
+    target_link_libraries(entry.cgi PRIVATE restapi rkdb gdbus IPCProtocol)
+endif()
 
 option(IPCWEBBACKEND_INSTALL_ON_OEM_PARTITION "compile: install on oem partition" OFF)
 if(IPCWEBBACKEND_INSTALL_ON_OEM_PARTITION)

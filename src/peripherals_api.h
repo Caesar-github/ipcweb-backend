@@ -21,4 +21,3 @@ public:
 } // namespace rockchip
 
 #endif // __CGI_PERIPHERALS_API_H__
-

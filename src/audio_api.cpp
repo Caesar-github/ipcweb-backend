@@ -3,18 +3,44 @@
 // found in the LICENSE file.
 
 #include "audio_api.h"
-#include <dbserver.h>
-#include <mediaserver.h>
+#include "common.h"
 
 namespace rockchip {
 namespace cgi {
+
+#ifdef USE_RKIPC
+
+void AudioApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  nlohmann::json content;
+#ifdef ENABLE_JWT
+  int user_level = Req.UserLevel;
+#endif
+  if (Req.Method == "GET") {
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+#ifdef ENABLE_JWT
+    if (user_level > 1) {
+      Resp.setErrorResponse(HttpStatus::kUnauthorized, "Unauthorized");
+      return;
+    }
+#endif
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else // USE_RKIPC
 
 static void audio_setting_item_set(nlohmann::json config, int id) {
   if (!config.empty()) {
     nlohmann::json setting_config = config;
     if (setting_config.dump().find("id") != setting_config.dump().npos)
       setting_config.erase("id");
-    mediaserver_set((char *)TABLE_AUDIO, id, (char *)setting_config.dump().c_str());
+    mediaserver_set((char *)TABLE_AUDIO, id,
+                    (char *)setting_config.dump().c_str());
   }
 }
 
@@ -76,6 +102,8 @@ void AudioApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+
+#endif
 
 } // namespace cgi
 } // namespace rockchip

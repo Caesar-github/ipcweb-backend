@@ -4,11 +4,93 @@
 
 #include "stream_api.h"
 #include "common.h"
-#include <dbserver.h>
-#include <netserver.h>
 
 namespace rockchip {
 namespace cgi {
+
+#ifdef USE_RKIPC
+void StreamURLApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
+  nlohmann::json content;
+  if (Req.Method == "GET") {
+    char *str =
+        (char *)"[{\"id\":0,\"sStreamProtocol\":\"RTSP\"},{\"id\":1,"
+                "\"sStreamProtocol\":\"RTMP\"},{\"id\":2,\"sStreamProtocol\":"
+                "\"RTMP\"},{\"id\":3,\"sStreamProtocol\":\"HTTP\"}]";
+    nlohmann::json stream_url_config = nlohmann::json::parse(str);
+    int pos_first = Req.PathInfo.find_first_of("/");
+    int pos_last = Req.PathInfo.find_last_of("/");
+
+    /* Get ip address */
+    std::string ipv4_address = ipv4_address_get();
+    minilog_debug("ipv4_address is %s\n", ipv4_address.c_str());
+
+    /* Get port */
+    std::string http_port = "80";
+    std::string rtsp_port = "554";
+    std::string rtmp_port = "1935";
+
+    /* Get URL by splicing */
+    for (int i = 0; i < 4; i++) {
+      std::string url;
+      std::string stream_type;
+
+      if (i == 0)
+        stream_type = "mainstream";
+      else if (i == 1)
+        stream_type = "substream";
+      else if (i == 2)
+        stream_type = "thirdstream";
+      else if (i == 3)
+        stream_type = "substream";
+
+      if (i == 0)
+        url = "rtsp://" + ipv4_address + ":" + rtsp_port + "/" + stream_type;
+      else if (i == 1 || i == 2)
+        url =
+            "rtmp://" + ipv4_address + ":" + rtmp_port + "/live/" + stream_type;
+      else if (i == 3)
+        url = "http://" + ipv4_address + ":" + http_port + "/live?port=" +
+              rtmp_port + "&app=live&stream=" + stream_type;
+      // example :
+      // http://172.16.21.22:80/live?port=1935&app=live&stream=substream
+      stream_url_config.at(i).emplace("sURL", url);
+    }
+
+    content = stream_url_config;
+
+    //     content = R"(
+    // [{
+    // 	"id": 0,
+    // 	"sStreamProtocol": "RTSP",
+    // 	"sURL": "rtsp://192.168.1.104:554/mainstream"
+    // }, {
+    // 	"id": 1,
+    // 	"sStreamProtocol": "RTMP",
+    // 	"sURL": "rtmp://192.168.1.104:1935/live/substream"
+    // }, {
+    // 	"id": 2,
+    // 	"sStreamProtocol": "RTMP",
+    // 	"sURL": "rtmp://192.168.1.104:1935/live/thirdstream"
+    // }, {
+    // 	"id": 3,
+    // 	"sStreamProtocol": "HTTP",
+    // 	"sURL":
+    // "http://192.168.1.104:80/live?port=1935&app=live&stream=substream"
+    // }]      )"_json;
+    //   std::string ipv4_address = ipv4_address_get();
+    //   minilog_debug("ipv4_address is %s\n", ipv4_address.c_str());
+
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else if ((Req.Method == "POST") || (Req.Method == "PUT")) {
+    Resp.setHeader(HttpStatus::kOk, "OK");
+    Resp.setApiData(content);
+  } else {
+    Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
+  }
+}
+
+#else
 
 void StreamURLApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
   if (Req.Method == "GET") {
@@ -113,6 +195,7 @@ void StreamURLApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
   }
 }
+#endif
 
 } // namespace cgi
 } // namespace rockchip

@@ -14,12 +14,12 @@
 #include "image_api.h"
 #include "network_api.h"
 #include "osd_api.h"
+#include "peripherals_api.h"
 #include "roi_api.h"
 #include "storage_api.h"
 #include "stream_api.h"
 #include "system_api.h"
 #include "video_api.h"
-#include "peripherals_api.h"
 
 namespace rockchip {
 namespace cgi {
@@ -58,9 +58,12 @@ std::vector<QueryParam> parseParams(const std::string &QueryString) {
   return Params;
 }
 
+#ifdef ENABLE_JWT
 std::string checkToken(HttpRequest &Req) {
-  if (Req.PathInfo.compare("/system/login") && Req.PathInfo.find("system/para/webPage") == std::string::npos) {
-    // in addition to the /system/login and /system/para, all tokens are verified
+  if (Req.PathInfo.compare("/system/login") &&
+      Req.PathInfo.find("system/para/webPage") == std::string::npos) {
+    // in addition to the /system/login and /system/para, all tokens are
+    // verified
     if (Req.Cookies.empty())
       throw jwt::token_verification_exception("not found cookie");
     std::string cookie = Req.Cookies;
@@ -77,6 +80,7 @@ std::string checkToken(HttpRequest &Req) {
   }
   return "";
 }
+#endif
 
 HttpStatus parseRequest(HttpRequest &Req) {
   cgicc::Cgicc cgi;
@@ -209,7 +213,8 @@ void ApiEntry::run() {
   e.handler = std::bind(&EventApiHandler::handler, EventApiHandler(), _1, _2);
   Handlers.push_back(e);
   e.Api = peripherals_api;
-  e.handler = std::bind(&PeripheralsApiHandler::handler, PeripheralsApiHandler(), _1, _2);
+  e.handler = std::bind(&PeripheralsApiHandler::handler,
+                        PeripheralsApiHandler(), _1, _2);
   Handlers.push_back(e);
 
   std::string new_token;
@@ -218,15 +223,21 @@ void ApiEntry::run() {
     if (HttpStatus::kOk == parseRequest(Req)) {
 #ifdef ENABLE_JWT
       new_token = checkToken(Req);
-      // minilog_debug("level is %d\n", Req.UserLevel);
+// minilog_debug("level is %d\n", Req.UserLevel);
 #endif
       for (auto h : Handlers) {
         if (!Req.Api.compare(1, 20, h.Api, 0, 20)) {
+#ifdef USE_RKIPC
+          minilog_debug("Req.PathInfo: %s, use rkipc\n", Req.PathInfo.c_str());
+#else // USE_RKIPC
 #ifdef MEDIASERVER_ROCKFACE
-          minilog_debug("Req.PathInfo: %s, mediaserver rockface enable\n", Req.PathInfo.c_str());
+          minilog_debug("Req.PathInfo: %s, mediaserver rockface enable\n",
+                        Req.PathInfo.c_str());
 #else
-          minilog_debug("Req.PathInfo: %s\n, mediaserver rockface disable", Req.PathInfo.c_str());
+          minilog_debug("Req.PathInfo: %s\n, mediaserver rockface disable",
+                        Req.PathInfo.c_str());
 #endif
+#endif // USE_RKIPC
           h.handler(Req, Resp);
         }
       }
