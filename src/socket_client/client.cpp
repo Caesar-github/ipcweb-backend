@@ -1162,6 +1162,44 @@ int rk_wifi_forget_with_ssid(const char *ssid) {
 }
 
 // storage
+int rk_storage_record_start() {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_storage_record_stop() {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_take_photo() {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
 
 // event
 int rk_event_ri_get_enabled(int *value) {

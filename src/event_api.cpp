@@ -329,6 +329,15 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       } else {
         Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
       }
+    } else if (!path_specific_resource.compare("take-photo")) {
+      rk_take_photo();
+      Resp.setHeader(HttpStatus::kOk, "OK");
+    } else if (!path_specific_resource.compare("start-record")) {
+      rk_storage_record_start();
+      Resp.setHeader(HttpStatus::kOk, "OK");
+    } else if (!path_specific_resource.compare("stop-record")) {
+      rk_storage_record_stop();
+      Resp.setHeader(HttpStatus::kOk, "OK");
     } else {
       Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
     }

@@ -196,6 +196,9 @@ int rk_wifi_get_list(char **wifi_list);
 int rk_wifi_connect_with_ssid(const char *ssid, const char *psk);
 int rk_wifi_forget_with_ssid(const char *ssid);
 // storage
+int rk_storage_record_start();
+int rk_storage_record_stop();
+int rk_take_photo();
 // event
 int rk_event_ri_get_enabled(int *value);
 int rk_event_ri_set_enabled(int value);
