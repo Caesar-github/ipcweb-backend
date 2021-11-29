@@ -179,6 +179,12 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     } else if (!path_specific_resource.compare("last-face")) {
       Resp.setHeader(HttpStatus::kOk, "OK");
       Resp.setApiData(content);
+    } else if (!path_specific_resource.compare("get-record-status")) {
+      int record_status;
+      rk_stoarge_record_statue_get(&record_status);
+      content = record_status;
+      Resp.setHeader(HttpStatus::kOk, "OK");
+      Resp.setApiData(content);
     } else {
       Resp.setErrorResponse(HttpStatus::kNotImplemented, "Not Implemented");
     }
@@ -435,8 +441,9 @@ nlohmann::json face_list_search_by_condition(nlohmann::json serach_conditions) {
   std::string conditions =
       "from FaceList where (iAge between " + std::to_string(age_min) + " and " +
       std::to_string(age_max) + ") and (instr(iAccessCardNumber," +
-      std::to_string(access_card_number) + ")>0) and "
-                                           "(sRegistrationTime between '" +
+      std::to_string(access_card_number) +
+      ")>0) and "
+      "(sRegistrationTime between '" +
       begin_time + "' and '" + end_time + "') and " + gender_condition +
       " and " + type_condition;
   std::string cmd = "select count(*) " + conditions;

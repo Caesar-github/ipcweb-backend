@@ -169,11 +169,14 @@ void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
   if (Req.Method == "GET") {
     if (path_stream_resource.empty()) { // path is video
       content.push_back(video_param_get(0));
+      content.push_back(video_param_get(1));
+      content.push_back(video_param_get(2));
       Resp.setHeader(HttpStatus::kOk, "OK");
       Resp.setApiData(content);
     } else {
       if (path_specific_resource.empty()) { // path example is video/0
-        content = video_param_get(0);
+        int id = stoi(path_stream_resource);
+        content = video_param_get(id);
         Resp.setHeader(HttpStatus::kOk, "OK");
         Resp.setApiData(content);
       } else if (!path_stream_resource.compare("2/region-clip")) {
@@ -204,7 +207,7 @@ void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
     } else {
       if (path_specific_resource.empty()) { // path example is video/0
         int stream_id = atoi(path_stream_resource.c_str());
-        nlohmann::json cfg_old = video_param_get(0);
+        nlohmann::json cfg_old = video_param_get(stream_id);
         nlohmann::json diff = nlohmann::json::diff(cfg_old, video_config);
         for (auto &x : nlohmann::json::iterator_wrapper(cfg_old)) {
           if (diff.dump().find("\"replace\",\"path\":\"/" + x.key()) ==
@@ -213,7 +216,7 @@ void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         }
         minilog_debug("video_config is %s\n", video_config.dump().c_str());
         video_set_param(stream_id, video_config);
-        content = video_param_get(0);
+        content = video_param_get(stream_id);
         Resp.setHeader(HttpStatus::kOk, "OK");
         Resp.setApiData(content);
       } else if (!path_stream_resource.compare("2/region-clip")) {

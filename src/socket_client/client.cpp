@@ -1188,6 +1188,10 @@ int rk_storage_record_stop() {
   return ret;
 }
 
+int rk_stoarge_record_statue_get(int *value) {
+  return rk_client_get_int((char *)__func__, value);
+}
+
 int rk_take_photo() {
   int fd;
   int ret = 0;

@@ -621,4 +621,4 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
 #endif
 
 } // namespace cgi
-} // namespace rockchips
+} // namespace rockchip

@@ -134,7 +134,12 @@ void StorageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
             atoi((char *)path_hdd_id.substr(0, path_hdd_id.size()).c_str());
         // char *str = dbserver_storage_get((char *)TABLE_STORAGE_ADVANCE_PARA);
         if (!hdd_id) {
-          // content = nlohmann::json::parse(str).at("jData").at(hdd_id);
+          content = R"(
+            {
+              "iEnabled": 0,
+              "id": 0
+            }
+          )"_json;
           Resp.setHeader(HttpStatus::kOk, "OK");
           Resp.setApiData(content);
         } else {

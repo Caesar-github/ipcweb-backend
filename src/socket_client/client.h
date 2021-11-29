@@ -198,6 +198,7 @@ int rk_wifi_forget_with_ssid(const char *ssid);
 // storage
 int rk_storage_record_start();
 int rk_storage_record_stop();
+int rk_stoarge_record_statue_get(int *value);
 int rk_take_photo();
 // event
 int rk_event_ri_get_enabled(int *value);
