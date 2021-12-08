@@ -93,6 +93,13 @@ nlohmann::json image_specific_resource_get(std::string string) {
     specific_resource.emplace("sPowerLineFrequencyMode", tmp);
     rk_isp_get_image_flip(0, &tmp);
     specific_resource.emplace("sImageFlip", tmp);
+  } else if (!string.compare(PATH_IMAGE_AF)) {
+    rk_isp_get_af_mode(0, &tmp);
+    specific_resource.emplace("sAFMode", tmp);
+    rk_isp_get_zoom_level(0, &value_int);
+    specific_resource.emplace("iZoomLevel", value_int);
+    rk_isp_get_focus_level(0, &value_int);
+    specific_resource.emplace("iFocusLevel", value_int);
   }
   delete[] tmp;
 
@@ -267,6 +274,12 @@ void image_specific_resource_set(std::string string, nlohmann::json data) {
       value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
       rk_isp_set_image_flip(0, value.c_str());
     }
+  } else if (!string.compare(PATH_IMAGE_AF)) {
+    if (data.dump().find("sAFMode") != data.dump().npos) {
+      value = data.at("sAFMode").dump();
+      value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
+      rk_isp_set_af_mode(0, value.c_str());
+    }
   }
 }
 
@@ -320,7 +333,6 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         return;
       }
 #endif
-
       //  cfg_old = image_channel_resource_get(channel_id, id);
       //   /* Erase unexist data */
       //   for (auto &x : nlohmann::json::iterator_wrapper(image_config)) {
@@ -339,13 +351,38 @@ void ImageApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       //   /* Get new info */
       //   content = image_channel_resource_get(channel_id, id);
     } else { /* path example is /image/0/blc */
-
-      /* Set */
-      image_specific_resource_set(path_specific_resource, image_config);
-      /* Get new info */
-      content = image_specific_resource_get(path_specific_resource);
+      if (!path_specific_resource.compare(PATH_IMAGE_AF_CMD)) {
+        if (image_config.dump().find("cmd") != std::string::npos) {
+          std::string af_cmd = image_config.at("cmd");
+          int ret = 0;
+          if (af_cmd == "ZoomIn")
+            ret = rk_isp_af_zoom_in(0);
+          else if (af_cmd == "ZoomOut")
+            ret = rk_isp_af_zoom_out(0);
+          else if (af_cmd == "FocusIn")
+            ret = rk_isp_af_focus_in(0);
+          else if (af_cmd == "FocusOut")
+            ret = rk_isp_af_focus_out(0);
+          else if (af_cmd == "FocusOnce")
+            ret = rk_isp_af_focus_once(0);
+          else
+            minilog_debug("unsupport, af_cmd is %s\n", af_cmd.c_str());
+          // TODO: overRange, onlyManualSupport, NotAutoSupport
+          if (ret)
+            content.emplace("rst", "fail");
+          else
+            content.emplace("rst", "success");
+        } else {
+          content.emplace("rst", "illegalCmd");
+        }
+      } else {
+        // TODO: only set diff
+        /* Set */
+        image_specific_resource_set(path_specific_resource, image_config);
+        /* Get new info */
+        content = image_specific_resource_get(path_specific_resource);
+      }
     }
-
     Resp.setHeader(HttpStatus::kOk, "OK");
     Resp.setApiData(content);
   } else {

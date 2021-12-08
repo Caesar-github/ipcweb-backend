@@ -68,6 +68,16 @@ int rk_isp_get_power_line_frequency_mode(int cam_id, char **value);
 int rk_isp_set_power_line_frequency_mode(int cam_id, const char *value);
 int rk_isp_get_image_flip(int cam_id, char **value);
 int rk_isp_set_image_flip(int cam_id, const char *value);
+// auto focus
+int rk_isp_get_af_mode(int cam_id, char **value);
+int rk_isp_set_af_mode(int cam_id, const char *mode);
+int rk_isp_get_zoom_level(int cam_id, int *value);
+int rk_isp_get_focus_level(int cam_id, int *value);
+int rk_isp_af_zoom_in(int cam_id);
+int rk_isp_af_zoom_out(int cam_id);
+int rk_isp_af_focus_in(int cam_id);
+int rk_isp_af_focus_out(int cam_id);
+int rk_isp_af_focus_once(int cam_id);
 // video
 int rk_video_set(const char *json);
 int rk_video_restart();

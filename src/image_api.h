@@ -27,6 +27,8 @@
 #define PATH_IMAGE_ENHANCEMENT "enhancement"
 #define PATH_IMAGE_VIDEO_ADJUSTMEN "video-adjustment"
 #define PATH_IMAGE_OTHER "other"
+#define PATH_IMAGE_AF "af"
+#define PATH_IMAGE_AF_CMD "af-cmd"
 
 #define KEY_IMAGE_ADJUSTMENT "imageAdjustment"
 #define KEY_IMAGE_EXPOSURE "exposure"

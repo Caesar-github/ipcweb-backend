@@ -384,6 +384,93 @@ int rk_isp_set_image_flip(int cam_id, const char *value) {
   return rk_client_set_string_by_id((char *)__func__, cam_id, value);
 }
 
+// auto focus
+int rk_isp_get_af_mode(int cam_id, char **value) {
+  return rk_client_get_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_set_af_mode(int cam_id, const char *value) {
+  return rk_client_set_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_get_zoom_level(int cam_id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_get_focus_level(int cam_id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_af_zoom_in(int cam_id) {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_write(fd, &cam_id, sizeof(int));
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_isp_af_zoom_out(int cam_id) {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_write(fd, &cam_id, sizeof(int));
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_isp_af_focus_in(int cam_id) {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_write(fd, &cam_id, sizeof(int));
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_isp_af_focus_out(int cam_id) {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_write(fd, &cam_id, sizeof(int));
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
+int rk_isp_af_focus_once(int cam_id) {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_write(fd, &cam_id, sizeof(int));
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
 // video
 int rk_video_set(const char *json) {
   return rk_client_set_string((char *)__func__, json);
