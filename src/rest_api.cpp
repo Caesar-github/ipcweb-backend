@@ -57,7 +57,7 @@ std::vector<QueryParam> parseParams(const std::string &QueryString) {
 
   return Params;
 }
-
+#ifndef USE_RKIPC
 #ifdef ENABLE_JWT
 std::string checkToken(HttpRequest &Req) {
   if (Req.PathInfo.compare("/system/login") &&
@@ -81,7 +81,7 @@ std::string checkToken(HttpRequest &Req) {
   return "";
 }
 #endif
-
+#endif
 HttpStatus parseRequest(HttpRequest &Req) {
   cgicc::Cgicc cgi;
   Req.ScriptName = cgi.getEnvironment().getScriptName();
@@ -221,9 +221,11 @@ void ApiEntry::run() {
   Resp.setHeader(HttpStatus::kOk);
   try {
     if (HttpStatus::kOk == parseRequest(Req)) {
+#ifndef USE_RKIPC
 #ifdef ENABLE_JWT
       new_token = checkToken(Req);
 // minilog_debug("level is %d\n", Req.UserLevel);
+#endif
 #endif
       for (auto h : Handlers) {
         if (!Req.Api.compare(1, 20, h.Api, 0, 20)) {

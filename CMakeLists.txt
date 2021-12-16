@@ -12,7 +12,7 @@ project(ipcweb-backend
     VERSION ${PROJECT_VERSION_FULL})
 set(DESCRIPTION "IP Camera web backend cgi projects")
 
-option(IPCWEBBACKEND_BUILD_TESTS  "Build tests executables" ON)
+option(IPCWEBBACKEND_BUILD_TESTS  "Build tests executables" OFF)
 option(ENABLE_JWT  "enbale jwt" ON)
 option(MEDIASERVER_ROCKFACE  "enbale mediaserver rockface" OFF)
 option(USE_RKIPC  "use rkipc" OFF)
@@ -27,11 +27,15 @@ endif()
 
 set(TARGET_HOST ${CMAKE_SYSTEM_PROCESSOR}-linux)
 
+if (${USE_RKIPC})
+find_package(jwt_cpp REQUIRED)
+else()
 find_package(MiniLogger REQUIRED)
 find_package(Cgicc)
 find_package(nlohmann_json REQUIRED)
 find_package(jwt_cpp REQUIRED)
 find_package(OpenSSL REQUIRED)
+endif()
 
 include(GNUInstallDirs)
 if (${IPCWEBBACKEND_BUILD_TESTS})
