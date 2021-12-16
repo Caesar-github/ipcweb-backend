@@ -40,8 +40,10 @@ if (${USE_RKIPC})
     add_definitions(-DUSE_RKIPC)
     target_link_libraries(entry.cgi PRIVATE restapi pthread crypto cgicc minilogger glib-2.0 pcre)
 else()
-    target_link_libraries(entry.cgi PRIVATE restapi rkdb gdbus IPCProtocol pthread OpenSSL::crypto
-                            Cgicc::Cgicc MiniLogger::MiniLogger nlohmann_json::nlohmann_json)
+    target_link_libraries(restapi
+        PRIVATE OpenSSL::Crypto Cgicc::Cgicc pthread
+        PUBLIC MiniLogger::MiniLogger nlohmann_json::nlohmann_json)
+    target_link_libraries(entry.cgi PRIVATE restapi rkdb gdbus IPCProtocol)
 endif()
 
 option(IPCWEBBACKEND_INSTALL_ON_OEM_PARTITION "compile: install on oem partition" OFF)
