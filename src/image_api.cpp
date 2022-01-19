@@ -42,7 +42,12 @@ nlohmann::json image_specific_resource_get(std::string string) {
     rk_isp_get_exposure_gain(0, &value_int);
     specific_resource.emplace("iExposureGain", value_int);
   } else if (!string.compare(PATH_IMAGE_NIGHT_TO_DAY)) {
-
+    rk_isp_get_night_to_day(0, &tmp);
+    specific_resource.emplace("sNightToDay", tmp);
+    rk_isp_get_fill_light_mode(0, &tmp);
+    specific_resource.emplace("sFillLightMode", tmp);
+    rk_isp_get_light_brightness(0, &value_int);
+    specific_resource.emplace("iLightBrightness", value_int);
   } else if (!string.compare(PATH_IMAGE_BLC)) {
     rk_isp_get_hdr(0, &tmp);
     specific_resource.emplace("sHDR", tmp);
@@ -176,13 +181,21 @@ void image_specific_resource_set(std::string string, nlohmann::json data) {
       rk_isp_set_gain_mode(0, value.c_str());
     }
   } else if (!string.compare(PATH_IMAGE_NIGHT_TO_DAY)) {
-
-  } else if (!string.compare(PATH_IMAGE_BLC)) {
-    if (data.dump().find("sHDR") != data.dump().npos) {
-      value = data.at("sHDR").dump();
+    if (data.dump().find("sNightToDay") != data.dump().npos) {
+      value = data.at("sNightToDay").dump();
       value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
-      rk_isp_set_hdr(0, value.c_str());
+      rk_isp_set_night_to_day(0, value.c_str());
     }
+    if (data.dump().find("sFillLightMode") != data.dump().npos) {
+      value = data.at("sFillLightMode").dump();
+      value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
+      rk_isp_set_fill_light_mode(0, value.c_str());
+    }
+    if (data.dump().find("iLightBrightness") != data.dump().npos) {
+      value_int = atoi(data.at("iLightBrightness").dump().c_str());
+      rk_isp_set_light_brightness(0, value_int);
+    }
+  } else if (!string.compare(PATH_IMAGE_BLC)) {
     if (data.dump().find("sBLCRegion") != data.dump().npos) {
       value = data.at("sBLCRegion").dump();
       value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
@@ -208,6 +221,12 @@ void image_specific_resource_set(std::string string, nlohmann::json data) {
     if (data.dump().find("iDarkBoostLevel") != data.dump().npos) {
       value_int = atoi(data.at("iDarkBoostLevel").dump().c_str());
       rk_isp_set_dark_boost_level(0, value_int);
+    }
+    // it will restart app, must be the last call
+    if (data.dump().find("sHDR") != data.dump().npos) {
+      value = data.at("sHDR").dump();
+      value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
+      rk_isp_set_hdr(0, value.c_str());
     }
   } else if (!string.compare(PATH_IMAGE_WHITE_BLANCE)) {
     if (data.dump().find("sWhiteBlanceStyle") != data.dump().npos) {

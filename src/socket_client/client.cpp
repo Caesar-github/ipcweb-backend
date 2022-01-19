@@ -206,7 +206,31 @@ int rk_isp_get_exposure_gain(int cam_id, int *value) {
 int rk_isp_set_exposure_gain(int cam_id, int value) {
   return rk_client_set_int_by_id((char *)__func__, cam_id, value);
 }
+
 // night_to_day
+int rk_isp_get_night_to_day(int cam_id, char **value) {
+  return rk_client_get_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_set_night_to_day(int cam_id, const char *value) {
+  return rk_client_set_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_get_fill_light_mode(int cam_id, char **value) {
+  return rk_client_get_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_set_fill_light_mode(int cam_id, const char *value) {
+  return rk_client_set_string_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_get_light_brightness(int cam_id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, cam_id, value);
+}
+
+int rk_isp_set_light_brightness(int cam_id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, cam_id, value);
+}
 
 // blc
 int rk_isp_get_hdr(int cam_id, char **value) {
@@ -1275,7 +1299,7 @@ int rk_storage_record_stop() {
   return ret;
 }
 
-int rk_stoarge_record_statue_get(int *value) {
+int rk_storage_record_statue_get(int *value) {
   return rk_client_get_int((char *)__func__, value);
 }
 

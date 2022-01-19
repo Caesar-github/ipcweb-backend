@@ -21,6 +21,12 @@ int rk_isp_set_exposure_time(int cam_id, const char *value);
 int rk_isp_get_exposure_gain(int cam_id, int *value);
 int rk_isp_set_exposure_gain(int cam_id, int value);
 // night_to_day
+int rk_isp_get_night_to_day(int cam_id, char **value);
+int rk_isp_set_night_to_day(int cam_id, const char *value);
+int rk_isp_get_fill_light_mode(int cam_id, char **value);
+int rk_isp_set_fill_light_mode(int cam_id, const char *value);
+int rk_isp_get_light_brightness(int cam_id, int *value);
+int rk_isp_set_light_brightness(int cam_id, int value);
 // blc
 int rk_isp_get_hdr(int cam_id, char **value);
 int rk_isp_set_hdr(int cam_id, const char *value);
@@ -208,7 +214,7 @@ int rk_wifi_forget_with_ssid(const char *ssid);
 // storage
 int rk_storage_record_start();
 int rk_storage_record_stop();
-int rk_stoarge_record_statue_get(int *value);
+int rk_storage_record_statue_get(int *value);
 int rk_take_photo();
 // event
 int rk_event_ri_get_enabled(int *value);

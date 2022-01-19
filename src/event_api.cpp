@@ -181,7 +181,7 @@ void EventApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
       Resp.setApiData(content);
     } else if (!path_specific_resource.compare("get-record-status")) {
       int record_status;
-      rk_stoarge_record_statue_get(&record_status);
+      rk_storage_record_statue_get(&record_status);
       content = record_status;
       Resp.setHeader(HttpStatus::kOk, "OK");
       Resp.setApiData(content);
