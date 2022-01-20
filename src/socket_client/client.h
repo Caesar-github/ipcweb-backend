@@ -65,8 +65,6 @@ int rk_isp_get_temporal_denoise_level(int cam_id, int *value);
 int rk_isp_set_temporal_denoise_level(int cam_id, int value);
 int rk_isp_get_dehaze_level(int cam_id, int *value);
 int rk_isp_set_dehaze_level(int cam_id, int value);
-int rk_isp_get_fec_level(int cam_id, int *value);
-int rk_isp_set_fec_level(int cam_id, int value);
 int rk_isp_get_ldch_level(int cam_id, int *value);
 int rk_isp_set_ldch_level(int cam_id, int value);
 // video_adjustment

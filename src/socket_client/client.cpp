@@ -375,14 +375,6 @@ int rk_isp_set_dehaze_level(int cam_id, int value) {
   return rk_client_set_int_by_id((char *)__func__, cam_id, value);
 }
 
-int rk_isp_get_fec_level(int cam_id, int *value) {
-  return rk_client_get_int_by_id((char *)__func__, cam_id, value);
-}
-
-int rk_isp_set_fec_level(int cam_id, int value) {
-  return rk_client_set_int_by_id((char *)__func__, cam_id, value);
-}
-
 int rk_isp_get_ldch_level(int cam_id, int *value) {
   return rk_client_get_int_by_id((char *)__func__, cam_id, value);
 }
