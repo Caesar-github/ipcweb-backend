@@ -593,6 +593,25 @@ int rk_video_set_frame_rate_in(int stream_id, const char *value) {
   return rk_client_set_string_by_id((char *)__func__, stream_id, value);
 }
 
+// system
+
+int rk_system_capability_get_video(char *value) {
+  int fd, len;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_read(fd, &len, sizeof(int));
+  if (len != 0)
+    sock_read(fd, value, len);
+  memset(value + len, '\0', 1); // set terminator
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
 int rk_system_get_deivce_name(char **value) {
   return rk_client_get_string((char *)__func__, value);
 }

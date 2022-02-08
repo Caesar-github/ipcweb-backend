@@ -110,6 +110,7 @@ int rk_video_set_frame_rate_in(int stream_id, const char *value);
 // audio
 int rk_audio_set(const char *json);
 // system
+int rk_system_capability_get_video(char *value);
 int rk_system_get_deivce_name(char **value);
 int rk_system_get_telecontrol_id(char **value);
 int rk_system_get_model(char **value);
