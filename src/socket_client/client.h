@@ -111,6 +111,13 @@ int rk_video_set_frame_rate_in(int stream_id, const char *value);
 int rk_audio_set(const char *json);
 // system
 int rk_system_capability_get_video(char *value);
+int rk_system_capability_get_image_adjustment(char *value);
+int rk_system_capability_get_image_blc(char *value);
+int rk_system_capability_get_image_enhancement(char *value);
+int rk_system_capability_get_image_exposure(char *value);
+int rk_system_capability_get_image_night_to_day(char *value);
+int rk_system_capability_get_image_video_adjustment(char *value);
+int rk_system_capability_get_image_white_blance(char *value);
 int rk_system_get_deivce_name(char **value);
 int rk_system_get_telecontrol_id(char **value);
 int rk_system_get_model(char **value);
