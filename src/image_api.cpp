@@ -255,6 +255,11 @@ void image_specific_resource_set(std::string string, nlohmann::json data) {
       value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
       rk_isp_set_dehaze(0, value.c_str());
     }
+    if (data.dump().find("sGrayScaleMode") != data.dump().npos) {
+      value = data.at("sGrayScaleMode").dump();
+      value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
+      rk_isp_set_gray_scale_mode(0, value.c_str());
+    }
     if (data.dump().find("sDistortionCorrection") != data.dump().npos) {
       value = data.at("sDistortionCorrection").dump();
       value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"

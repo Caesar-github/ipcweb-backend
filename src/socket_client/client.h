@@ -57,6 +57,7 @@ int rk_isp_set_noise_reduce_mode(int cam_id, const char *value);
 int rk_isp_get_dehaze(int cam_id, char **value);
 int rk_isp_set_dehaze(int cam_id, const char *value);
 int rk_isp_get_gray_scale_mode(int cam_id, char **value);
+int rk_isp_set_gray_scale_mode(int cam_id, const char *value);
 int rk_isp_get_distortion_correction(int cam_id, char **value);
 int rk_isp_set_distortion_correction(int cam_id, const char *value);
 int rk_isp_get_spatial_denoise_level(int cam_id, int *value);
