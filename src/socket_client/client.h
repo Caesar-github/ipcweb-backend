@@ -201,6 +201,26 @@ int rk_osd_set_display_text(int id, const char *value);
 int rk_osd_get_image_path(int id, char **value);
 int rk_osd_set_image_path(int id, const char *value);
 int rk_osd_restart();
+// roi.x
+int rk_roi_get_stream_type(int id, char **value);
+int rk_roi_set_stream_type(int id, const char *value);
+int rk_roi_get_name(int id, char **value);
+int rk_roi_set_name(int id, const char *value);
+int rk_roi_get_id(int id, int *value);
+int rk_roi_set_id(int id, int value);
+int rk_roi_get_enabled(int id, int *value);
+int rk_roi_set_enabled(int id, int value);
+int rk_roi_get_position_x(int id, int *value);
+int rk_roi_set_position_x(int id, int value);
+int rk_roi_get_position_y(int id, int *value);
+int rk_roi_set_position_y(int id, int value);
+int rk_roi_get_height(int id, int *value);
+int rk_roi_set_height(int id, int value);
+int rk_roi_get_width(int id, int *value);
+int rk_roi_set_width(int id, int value);
+int rk_roi_get_quality_level(int id, int *value);
+int rk_roi_set_quality_level(int id, int value);
+int rk_roi_set_all();
 // network
 int rk_network_ipv4_get(const char *interface, char *method, char *address,
                         char *netmask, char *gateway);
