@@ -98,6 +98,8 @@ int rk_video_get_rc_quality(int stream_id, char **value);
 int rk_video_set_rc_quality(int stream_id, const char *value);
 int rk_video_get_smart(int stream_id, char **value);
 int rk_video_set_smart(int stream_id, const char *value);
+int rk_video_get_svc(int stream_id, char **value);
+int rk_video_set_svc(int stream_id, const char *value);
 int rk_video_get_stream_type(int stream_id, char **value);
 int rk_video_set_stream_type(int stream_id, const char *value);
 int rk_video_get_h264_profile(int stream_id, char **value);

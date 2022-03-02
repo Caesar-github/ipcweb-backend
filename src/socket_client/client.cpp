@@ -557,6 +557,14 @@ int rk_video_set_smart(int stream_id, const char *value) {
   return rk_client_set_string_by_id((char *)__func__, stream_id, value);
 }
 
+int rk_video_get_svc(int stream_id, char **value) {
+  return rk_client_get_string_by_id((char *)__func__, stream_id, value);
+}
+
+int rk_video_set_svc(int stream_id, const char *value) {
+  return rk_client_set_string_by_id((char *)__func__, stream_id, value);
+}
+
 int rk_video_get_stream_type(int stream_id, char **value) {
   return rk_client_get_string_by_id((char *)__func__, stream_id, value);
 }

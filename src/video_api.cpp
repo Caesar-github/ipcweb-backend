@@ -48,6 +48,9 @@ nlohmann::json video_param_get(int stream_id) {
   rk_video_get_smart(stream_id, &tmp);
   param.emplace("sSmart", tmp);
 
+  rk_video_get_svc(stream_id, &tmp);
+  param.emplace("sSVC", tmp);
+
   rk_video_get_stream_type(stream_id, &tmp);
   param.emplace("sStreamType", tmp);
 
@@ -105,6 +108,11 @@ int video_set_param(int stream_id, nlohmann::json param) {
     value = param.at("sSmart").dump();
     value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
     rk_video_set_smart(stream_id, value.c_str());
+  }
+  if (param.dump().find("sSVC") != param.dump().npos) {
+    value = param.at("sSVC").dump();
+    value.erase(0, 1).erase(value.end() - 1, value.end()); // erase \"
+    rk_video_set_svc(stream_id, value.c_str());
   }
   if (param.dump().find("sStreamType") != param.dump().npos) {
     value = param.at("sStreamType").dump();
