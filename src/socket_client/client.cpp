@@ -1186,6 +1186,60 @@ int rk_roi_set_all() {
   return ret;
 }
 
+// region_clip.x
+int rk_region_clip_get_enabled(int id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_enabled(int id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_get_position_x(int id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_position_x(int id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_get_position_y(int id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_position_y(int id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_get_height(int id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_height(int id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_get_width(int id, int *value) {
+  return rk_client_get_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_width(int id, int value) {
+  return rk_client_set_int_by_id((char *)__func__, id, value);
+}
+
+int rk_region_clip_set_all() {
+  int fd;
+  int ret = 0;
+
+  fd = cli_begin((char *)__func__);
+  /* Transmission parameters */
+  sock_read(fd, &ret, sizeof(int));
+  /* End transmission parameters */
+  ret = cli_end(fd);
+
+  return ret;
+}
+
 // network
 int rk_network_ipv4_get(const char *interface, char *method, char *address,
                         char *netmask, char *gateway) {

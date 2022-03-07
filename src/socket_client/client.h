@@ -221,6 +221,18 @@ int rk_roi_set_width(int id, int value);
 int rk_roi_get_quality_level(int id, int *value);
 int rk_roi_set_quality_level(int id, int value);
 int rk_roi_set_all();
+// region_clip.x
+int rk_region_clip_get_enabled(int id, int *value);
+int rk_region_clip_set_enabled(int id, int value);
+int rk_region_clip_get_position_x(int id, int *value);
+int rk_region_clip_set_position_x(int id, int value);
+int rk_region_clip_get_position_y(int id, int *value);
+int rk_region_clip_set_position_y(int id, int value);
+int rk_region_clip_get_height(int id, int *value);
+int rk_region_clip_set_height(int id, int value);
+int rk_region_clip_get_width(int id, int *value);
+int rk_region_clip_set_width(int id, int value);
+int rk_region_clip_set_all();
 // network
 int rk_network_ipv4_get(const char *interface, char *method, char *address,
                         char *netmask, char *gateway);

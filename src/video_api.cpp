@@ -144,6 +144,70 @@ int video_set_param(int stream_id, nlohmann::json param) {
   return 0;
 }
 
+nlohmann::json video_region_clip_info_get() {
+  int id = 2; // tmp only support third-stream
+  int value;
+  char *str;
+  nlohmann::json region_clip_info;
+  nlohmann::json normalized_screen_size;
+
+  rk_osd_get_normalized_screen_width(&value);
+  normalized_screen_size.emplace("iNormalizedScreenWidth", value);
+  rk_osd_get_normalized_screen_height(&value);
+  normalized_screen_size.emplace("iNormalizedScreenHeight", value);
+
+  // region_clip_region
+  nlohmann::json region_clip_region;
+  rk_region_clip_get_position_x(id, &value);
+  region_clip_region.emplace("iPositionX", value);
+  rk_region_clip_get_position_y(id, &value);
+  region_clip_region.emplace("iPositionY", value);
+  rk_region_clip_get_width(id, &value);
+  region_clip_region.emplace("iWidth", value);
+  rk_region_clip_get_height(id, &value);
+  region_clip_region.emplace("iHeight", value);
+  rk_region_clip_get_enabled(id, &value);
+  region_clip_region.emplace("iRegionClipEnabled", value);
+  // region_clip_info
+  region_clip_info.emplace("normalizedScreenSize", normalized_screen_size);
+  region_clip_info.emplace("regionClip", region_clip_region);
+
+  return region_clip_info;
+}
+
+void video_region_clip_set(nlohmann::json region_clip_config, int id) {
+  int value_int;
+  std::string value;
+
+  if (region_clip_config.dump().find("iRegionClipEnabled") !=
+      region_clip_config.dump().npos) {
+    value_int =
+        atoi(region_clip_config.at("iRegionClipEnabled").dump().c_str());
+    rk_region_clip_set_enabled(id, value_int);
+  }
+  if (region_clip_config.dump().find("iPositionX") !=
+      region_clip_config.dump().npos) {
+    value_int = atoi(region_clip_config.at("iPositionX").dump().c_str());
+    rk_region_clip_set_position_x(id, value_int);
+  }
+  if (region_clip_config.dump().find("iPositionY") !=
+      region_clip_config.dump().npos) {
+    value_int = atoi(region_clip_config.at("iPositionY").dump().c_str());
+    rk_region_clip_set_position_y(id, value_int);
+  }
+  if (region_clip_config.dump().find("iHeight") !=
+      region_clip_config.dump().npos) {
+    value_int = atoi(region_clip_config.at("iHeight").dump().c_str());
+    rk_region_clip_set_height(id, value_int);
+  }
+  if (region_clip_config.dump().find("iWidth") !=
+      region_clip_config.dump().npos) {
+    value_int = atoi(region_clip_config.at("iWidth").dump().c_str());
+    rk_region_clip_set_width(id, value_int);
+  }
+  rk_region_clip_set_all();
+}
+
 void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
   std::string path_api_resource;
   std::string path_stream_resource;
@@ -189,7 +253,7 @@ void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         Resp.setApiData(content);
       } else if (!path_stream_resource.compare("2/region-clip")) {
         // path must is video/2/region-clip
-        // content = video_region_clip_info_get();
+        content = video_region_clip_info_get();
         Resp.setHeader(HttpStatus::kOk, "OK");
         Resp.setApiData(content);
       } else if (!path_specific_resource.compare("advanced-enc")) {
@@ -229,11 +293,10 @@ void VideoApiHandler::handler(const HttpRequest &Req, HttpResponse &Resp) {
         Resp.setApiData(content);
       } else if (!path_stream_resource.compare("2/region-clip")) {
         // path must is video/2/region-clip
-        // if (!video_config.empty())
-        // dbserver_video_region_clip_set((char *)video_config.dump().c_str(),
-        //                                0); // temp only one table
+        if (!video_config.empty())
+          video_region_clip_set(video_config, 2); // temp only one table
         // get new info
-        // content = video_region_clip_info_get();
+        content = video_region_clip_info_get();
         Resp.setHeader(HttpStatus::kOk, "OK");
         Resp.setApiData(content);
       } else if (path_specific_resource.find("advanced-enc") !=
