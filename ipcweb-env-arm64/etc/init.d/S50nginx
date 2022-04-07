@@ -3,14 +3,14 @@
 # Start/stop nginx
 #
 
-NGINX=/usr/sbin/nginx
+NGINX=/oem/usr/sbin/nginx
 PIDFILE=/var/run/nginx.pid
 
 case "$1" in
   start)
 	echo "Starting nginx..."
 	mkdir -p /var/log/nginx /var/tmp/nginx
-	start-stop-daemon -S -x "$NGINX" -p "$PIDFILE"
+	start-stop-daemon -S -x "$NGINX" -p "$PIDFILE" -- -c /oem/usr/etc/nginx/nginx.conf
 	;;
   stop)
 	echo "Stopping nginx..."

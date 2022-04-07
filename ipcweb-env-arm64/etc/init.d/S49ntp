@@ -9,7 +9,7 @@ test -x $DAEMON || exit 0
 # Read config file if it is present.
 if [ -r /etc/default/$NAME ]
 then
-  . /etc/default/$NAME
+  . /oem/usr/etc/default/$NAME
 fi
 
 case "$1" in

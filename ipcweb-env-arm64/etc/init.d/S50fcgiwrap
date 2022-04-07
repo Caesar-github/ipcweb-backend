@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DESC="Simple FastCGI wrapper for CGI scripts"
-DAEMON=/usr/sbin/fcgiwrap
+DAEMON=/oem/usr/sbin/fcgiwrap
 PIDFILE=/var/run/fcgiwrap.pid
 SOCKET=/run/fcgiwrap.sock
 USER=www-data
